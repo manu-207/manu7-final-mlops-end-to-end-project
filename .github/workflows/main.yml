@@ -1,4 +1,4 @@
-name: MLOps CI Pipeline with dvc,s3,mlflow practice
+name: MLOps CI Pipeline with dvc,s3,mlflow practice latest
 
 on:
   push:
