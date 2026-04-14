@@ -1,20 +1,16 @@
 name: MLOps CI Pipeline with dvc,s3,mlflow practice
-
 on:
   push:
     branches: [ main ]
-
 jobs:
   train-evaluate:
     runs-on: ubuntu-latest
-
     env:
       MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_TRACKING_URI }}
       MLFLOW_EXPERIMENT_NAME: manu7-mlops
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: ap-south-1
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -36,3 +32,28 @@ jobs:
       - name: Run DVC Pipeline
         run: |
           dvc repro
+
+      - name: Show metrics
+        run: |
+          echo "=== Current Metrics ==="
+          dvc metrics show
+          echo ""
+          echo "=== Metrics Diff ==="
+          dvc metrics diff || echo "No previous metrics to compare"
+
+      - name: Push DVC outputs to S3
+        run: |
+          dvc push
+
+      - name: Commit DVC changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add dvc.lock metrics/ || true
+          git diff --quiet && git diff --staged --quiet || git commit -m "Update DVC pipeline results [skip ci]"
+
+      - name: Push changes to repository
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.ref }}
