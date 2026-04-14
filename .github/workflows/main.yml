@@ -2,6 +2,10 @@ name: MLOps CI Pipeline with dvc,s3,mlflow practice
 on:
   push:
     branches: [ main ]
+
+permissions:
+  contents: write        # ← ADD THIS
+
 jobs:
   train-evaluate:
     runs-on: ubuntu-latest
