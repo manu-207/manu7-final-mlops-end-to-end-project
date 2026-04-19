@@ -80,3 +80,18 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
           echo "Image pushed: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+      # ── ECS: Auto Deploy ───────────────────────────────────────────────────
+
+      - name: Deploy to ECS Fargate
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: manu7-mlops-api
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          aws ecs update-service \
+            --cluster manu7-mlops-cluster \
+            --service manu7-mlops-service \
+            --force-new-deployment \
+            --region ap-south-1
+          echo "ECS service updated with image: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
