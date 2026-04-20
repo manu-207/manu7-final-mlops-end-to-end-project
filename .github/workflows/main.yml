@@ -36,7 +36,7 @@ jobs:
           restore-keys: ${{ runner.os }}-pip-
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r requirements.txt pytest flask pandas
 
       - name: Run tests
         run: pytest tests/ -v
@@ -80,7 +80,7 @@ jobs:
           restore-keys: ${{ runner.os }}-pip-
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: pip install -r requirements.txt pytest flask pandas
 
       - name: Pull data from DVC
         run: dvc pull
@@ -100,7 +100,7 @@ jobs:
             git commit -m "Update DVC pipeline results [skip ci]"
 
       - name: Push changes to repository
-        uses: ad-m/github-push-action@d91a481090679758acf4944c6873bded8f595b27
+        uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ github.ref }}
