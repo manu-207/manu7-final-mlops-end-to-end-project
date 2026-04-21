@@ -6,3 +6,5 @@ dvc-s3
 flask
 pandas
 pytest
+prometheus-flask-exporter   
+prometheus-client            
