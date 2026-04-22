@@ -15,29 +15,36 @@ from evidently.metrics import DriftedColumnsCount, ValueDrift
 from evidently.presets import DataDriftPreset
 
 app = Flask(__name__)
-metrics = PrometheusMetrics(app)
-metrics.info("app_info", "Diabetes Predictor", version="1.0.0")
 
-# ── Existing Prometheus metrics ───────────────────────────────────────────────
-PREDICTION_COUNTER = Counter(
-    "diabetes_predictions_total", "Total predictions", ["result"]
-)
-PREDICTION_LATENCY = Histogram(
-    "diabetes_prediction_latency_seconds", "Prediction latency",
-    buckets=[0.01, 0.05, 0.1, 0.25, 0.5, 1.0]
-)
-MODEL_LOADED = Gauge("diabetes_model_loaded", "1 if model is loaded")
-GLUCOSE_HISTOGRAM = Histogram(
-    "diabetes_input_glucose", "Glucose input distribution",
-    buckets=[50, 80, 100, 120, 140, 160, 180, 200, 250]
-)
+# ── FIX 1: Guard all Prometheus metric registrations against duplicate
+#           registration when pytest imports app.py multiple times.
+# ─────────────────────────────────────────────────────────────────────────────
+if not hasattr(app, '_metrics_registered'):
+    metrics = PrometheusMetrics(app)
+    metrics.info("app_info", "Diabetes Predictor", version="1.0.0")
 
-# ── NEW Prometheus metrics for Evidently drift scores ─────────────────────────
-DRIFT_SHARE       = Gauge("evidently_drift_share",       "Share of drifted columns")
-GLUCOSE_DRIFT     = Gauge("evidently_glucose_drift",     "1 if Glucose drift detected")
-BMI_DRIFT         = Gauge("evidently_bmi_drift",         "1 if BMI drift detected")
-PREDICTION_DRIFT  = Gauge("evidently_prediction_drift",  "1 if prediction drift detected")
-DRIFT_WINDOW_SIZE = Gauge("evidently_drift_window_size", "Predictions in current window")
+    # Existing Prometheus metrics
+    PREDICTION_COUNTER = Counter(
+        "diabetes_predictions_total", "Total predictions", ["result"]
+    )
+    PREDICTION_LATENCY = Histogram(
+        "diabetes_prediction_latency_seconds", "Prediction latency",
+        buckets=[0.01, 0.05, 0.1, 0.25, 0.5, 1.0]
+    )
+    MODEL_LOADED = Gauge("diabetes_model_loaded", "1 if model is loaded")
+    GLUCOSE_HISTOGRAM = Histogram(
+        "diabetes_input_glucose", "Glucose input distribution",
+        buckets=[50, 80, 100, 120, 140, 160, 180, 200, 250]
+    )
+
+    # Prometheus metrics for Evidently drift scores
+    DRIFT_SHARE       = Gauge("evidently_drift_share",       "Share of drifted columns")
+    GLUCOSE_DRIFT     = Gauge("evidently_glucose_drift",     "1 if Glucose drift detected")
+    BMI_DRIFT         = Gauge("evidently_bmi_drift",         "1 if BMI drift detected")
+    PREDICTION_DRIFT  = Gauge("evidently_prediction_drift",  "1 if prediction drift detected")
+    DRIFT_WINDOW_SIZE = Gauge("evidently_drift_window_size", "Predictions in current window")
+
+    app._metrics_registered = True
 
 # ── Constants ─────────────────────────────────────────────────────────────────
 FEATURES = [
@@ -337,8 +344,12 @@ def _log_prediction(source):
 
 
 # ── Startup ────────────────────────────────────────────────────────────────────
+# FIX 2: Removed load_model() from here.
+#         It was called at import time, crashing pytest because models/model.pkl
+#         does not exist in CI. The test fixture injects the model directly via
+#         flask_app.model = mock_model, so load_model() at startup is not needed.
+#         load_reference_data() is safe — it only prints a warning if CSV missing.
 with app.app_context():
-    load_model()
     load_reference_data()
 
 if __name__ == "__main__":
