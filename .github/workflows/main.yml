@@ -13,8 +13,6 @@ jobs:
 
   # ─────────────────────────────────────────────────────────────
   # JOB 1 — Run pytest
-  # Runs on every push and every pull request
-  # If this fails, Job 2 will NOT run
   # ─────────────────────────────────────────────────────────────
   test:
     runs-on: ubuntu-latest
@@ -44,10 +42,7 @@ jobs:
           MLFLOW_TRACKING_URI: "file:///tmp/mlruns"
 
   # ─────────────────────────────────────────────────────────────
-  # JOB 2 — Train → Build Docker → Deploy to ECS
-  # Only runs when:
-  #   1. tests (Job 1) pass
-  #   2. it is a push to main (not a pull request)
+  # JOB 2 — Train → Monitor → Build Docker → Deploy to ECS
   # ─────────────────────────────────────────────────────────────
   train-evaluate:
     needs: test
@@ -83,8 +78,36 @@ jobs:
       - name: Pull data from DVC
         run: dvc pull
 
-      - name: Run DVC Pipeline
+      # dvc repro now runs: preprocess → train → evaluate → monitor
+      - name: Run DVC Pipeline (includes Evidently monitor stage)
         run: dvc repro
+
+      # ── NEW: Upload Evidently HTML report as CI artifact ─────────────────────
+      # Download from GitHub Actions → Run page → Artifacts section
+      - name: Upload Evidently Drift Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidently-drift-report-${{ github.sha }}
+          path: |
+            reports/data_drift_report.html
+            reports/evidently_summary.json
+          retention-days: 30
+
+      # ── NEW: Fail CI if drift_share > 0.5 (50 % of columns drifted) ─────────
+      # Protects production from deploying a model on badly drifted data
+      - name: Check drift threshold
+        run: |
+          python3 - <<'EOF'
+          import json, sys
+          with open("reports/evidently_summary.json") as f:
+              summary = json.load(f)
+          drift = summary.get("drift_share", 0)
+          print(f"Drift share: {drift:.2%}")
+          if drift > 0.5:
+              print("❌ DRIFT TOO HIGH — blocking deployment!")
+              sys.exit(1)
+          print("✅ Drift within acceptable range — proceeding.")
+          EOF
 
       - name: Push DVC outputs to S3
         run: dvc push
