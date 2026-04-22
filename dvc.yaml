@@ -9,6 +9,7 @@ stages:
     - preprocess.output
     outs:
     - data/processed/data.csv
+
   train:
     cmd: python src/train.py
     deps:
@@ -22,9 +23,24 @@ stages:
     - train.random_state
     outs:
     - models/model.pkl
+
   evaluate:
     cmd: python src/evaluate.py
     deps:
     - data/raw/data.csv
     - models/model.pkl
     - src/evaluate.py
+
+  # ── NEW: Evidently monitoring stage ──────────────────────────────────────────
+  # Runs after evaluate. Generates data drift + quality report.
+  # HTML report  → reports/data_drift_report.html  (artifact in MLflow)
+  # JSON summary → reports/evidently_summary.json  (scraped by Prometheus)
+  monitor:
+    cmd: python src/monitor.py
+    deps:
+    - data/raw/data.csv
+    - models/model.pkl
+    - src/monitor.py
+    outs:
+    - reports/data_drift_report.html
+    - reports/evidently_summary.json
