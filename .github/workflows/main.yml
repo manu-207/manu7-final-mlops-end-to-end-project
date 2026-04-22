@@ -1,4 +1,4 @@
-name: MLOps CI Pipeline with latest features
+name: MLOps CI Pipeline with latest
 
 on:
   push:
@@ -75,15 +75,18 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt pytest flask pandas
 
+      # ── FIX: create reports/ dir so DVC doesn't fail on pull ─────────────
+      - name: Create reports directory
+        run: mkdir -p reports
+
       - name: Pull data from DVC
         run: dvc pull
 
-      # dvc repro now runs: preprocess → train → evaluate → monitor
-      - name: Run DVC Pipeline (includes Evidently monitor stage)
+      # dvc repro runs: preprocess → train → evaluate → monitor
+      - name: Run DVC Pipeline
         run: dvc repro
 
-      # ── NEW: Upload Evidently HTML report as CI artifact ─────────────────────
-      # Download from GitHub Actions → Run page → Artifacts section
+      # ── Upload Evidently HTML report as CI artifact ───────────────────────
       - name: Upload Evidently Drift Report
         uses: actions/upload-artifact@v4
         with:
@@ -93,21 +96,20 @@ jobs:
             reports/evidently_summary.json
           retention-days: 30
 
-      # ── NEW: Fail CI if drift_share > 0.5 (50 % of columns drifted) ─────────
-      # Protects production from deploying a model on badly drifted data
+      # ── Fail CI if drift_share > 0.5 (50% of columns drifted) ────────────
       - name: Check drift threshold
         run: |
-          python3 - <<'EOF'
+          python3 - <<'PYEOF'
           import json, sys
           with open("reports/evidently_summary.json") as f:
               summary = json.load(f)
           drift = summary.get("drift_share", 0)
           print(f"Drift share: {drift:.2%}")
           if drift > 0.5:
-              print("❌ DRIFT TOO HIGH — blocking deployment!")
+              print("DRIFT TOO HIGH — blocking deployment!")
               sys.exit(1)
-          print("✅ Drift within acceptable range — proceeding.")
-          EOF
+          print("Drift within acceptable range — proceeding.")
+          PYEOF
 
       - name: Push DVC outputs to S3
         run: dvc push
@@ -126,7 +128,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ github.ref }}
 
-      # ── Docker: Build & Push to ECR ──────────────────────────
+      # ── Docker: Build & Push to ECR ──────────────────────────────────────
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -150,7 +152,7 @@ jobs:
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-      # ── ECS: Deploy ──────────────────────────────────────────
+      # ── ECS: Deploy ───────────────────────────────────────────────────────
       - name: Deploy to ECS Fargate
         run: |
           aws ecs update-service \
