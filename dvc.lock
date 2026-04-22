@@ -29,7 +29,7 @@ stages:
       size: 23841
     - path: src/train.py
       hash: md5
-      md5: 8b9700e53ebd09ea7be420520bd05e56
+      md5: 9da2c43a5b8f3690871e79d503d3e911
       size: 3282
     params:
       params.yaml:
@@ -41,8 +41,8 @@ stages:
     outs:
     - path: models/model.pkl
       hash: md5
-      md5: 1ffea1ccf27d3ab695ff84090fb076ea
-      size: 402490
+      md5: 4e207cc2109d46878dbe6181fd0a2609
+      size: 1138740
   evaluate:
     cmd: python src/evaluate.py
     deps:
@@ -52,9 +52,33 @@ stages:
       size: 23841
     - path: models/model.pkl
       hash: md5
-      md5: 1ffea1ccf27d3ab695ff84090fb076ea
-      size: 402490
+      md5: 4e207cc2109d46878dbe6181fd0a2609
+      size: 1138740
     - path: src/evaluate.py
       hash: md5
-      md5: 4dfe5ca12be3a06acda7bb34d4f75950
+      md5: 56ab97afb0c4e843856169c7a80b957c
       size: 918
+  monitor:
+    cmd: python src/monitor.py
+    deps:
+    - path: data/raw/data.csv
+      hash: md5
+      md5: d2e5ae01d94e8e633f00aec89e46301d
+      size: 23841
+    - path: models/model.pkl
+      hash: md5
+      md5: 4e207cc2109d46878dbe6181fd0a2609
+      size: 1138740
+    - path: src/monitor.py
+      hash: md5
+      md5: 54ac7e77a6c4f798a4dd53324f020ea8
+      size: 5964
+    outs:
+    - path: reports/data_drift_report.html
+      hash: md5
+      md5: 0b48a06f5707e37716b12c3cf32219b8
+      size: 4331129
+    - path: reports/evidently_summary.json
+      hash: md5
+      md5: 9b5b07230d59d8a31d006229a2af8a25
+      size: 107
