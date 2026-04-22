@@ -7,4 +7,5 @@ flask
 pandas
 pytest
 prometheus-flask-exporter   
-prometheus-client            
+prometheus-client  
+evidently
