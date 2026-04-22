@@ -31,10 +31,6 @@ stages:
     - models/model.pkl
     - src/evaluate.py
 
-  # ── NEW: Evidently monitoring stage ──────────────────────────────────────────
-  # Runs after evaluate. Generates data drift + quality report.
-  # HTML report  → reports/data_drift_report.html  (artifact in MLflow)
-  # JSON summary → reports/evidently_summary.json  (scraped by Prometheus)
   monitor:
     cmd: python src/monitor.py
     deps:
@@ -42,5 +38,9 @@ stages:
     - models/model.pkl
     - src/monitor.py
     outs:
-    - reports/data_drift_report.html
-    - reports/evidently_summary.json
+    # cache: false means DVC will NOT try to pull these from S3.
+    # They are regenerated fresh on every pipeline run.
+    - reports/data_drift_report.html:
+        cache: false
+    - reports/evidently_summary.json:
+        cache: false
