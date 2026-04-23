@@ -5,6 +5,8 @@ import json
 import yaml
 import mlflow
 from sklearn.model_selection import train_test_split
+from dotenv import load_dotenv
+load_dotenv()
 
 # ── Evidently 0.7.x correct imports ───────────────────────────────────────────
 from evidently import Report
