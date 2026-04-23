@@ -12,9 +12,10 @@ from evidently.metrics import DriftedColumnsCount, ValueDrift
 from evidently.presets import DataDriftPreset, DataSummaryPreset
 
 # ── MLflow setup (same pattern as train.py) ───────────────────────────────────
-MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI", "http://13.234.38.124:5000")
+MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI")
+if not MLFLOW_TRACKING_URI:
+    raise EnvironmentError("MLFLOW_TRACKING_URI env var is not set")
 mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-mlflow.set_experiment(os.getenv("MLFLOW_EXPERIMENT_NAME", "manu7-mlops"))
 
 params = yaml.safe_load(open("params.yaml"))["train"]
 
