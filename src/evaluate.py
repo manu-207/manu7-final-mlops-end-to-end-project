@@ -5,6 +5,8 @@ import yaml
 import os
 import mlflow
 from urllib.parse import urlparse
+from dotenv import load_dotenv
+load_dotenv()
 
 MLFLOW_TRACKING_URI = os.getenv("MLFLOW_TRACKING_URI")
 if not MLFLOW_TRACKING_URI:
