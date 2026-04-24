@@ -1,4 +1,4 @@
-name: MLOps CI Pipeline with my latest
+name: MLOps CI Pipeline with my latest project
 
 on:
   push:
