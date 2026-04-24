@@ -61,7 +61,7 @@ FEATURES = [
     "Pregnancies", "Glucose", "BloodPressure", "SkinThickness",
     "Insulin", "BMI", "DiabetesPedigreeFunction", "Age"
 ]
-DRIFT_CHECK_EVERY = 5    # lowered from 50 for testing — revert to 50 in production
+DRIFT_CHECK_EVERY = 50   # run drift check every N predictions
 
 FEATURE_ICONS = {
     "Pregnancies": "🤰", "Glucose": "🍬", "BloodPressure": "💓",
@@ -218,14 +218,6 @@ def run_live_drift_check():
         )
 
     try:
-        # ── SIMULATE DRIFT: shift current data so Evidently detects real drift ─
-        # Remove this block once you have genuinely different production data.
-        current_df = current_df.copy()
-        current_df["Glucose"]  = current_df["Glucose"] * 1.35
-        current_df["BMI"]      = current_df["BMI"] + 6.0
-        current_df["Age"]      = current_df["Age"] + 12
-        current_df["Insulin"]  = current_df["Insulin"] * 1.5
-        print("[Evidently] ⚠️  Simulated drift injected into live current data for testing")
         report = Report(metrics=[
             DriftedColumnsCount(),
             ValueDrift(column="Glucose"),
@@ -291,8 +283,8 @@ def drift_report():
             with open(path) as f:
                 return f.read(), 200, {"Content-Type": "text/html"}
     return (
-        "<h2 style='font-family:sans-serif;padding:40px'>📊 No drift report yet."
-        "<br><small>Make at least 5 predictions to generate a live report (testing mode).</small></h2>",
+        f"<h2 style='font-family:sans-serif;padding:40px'>📊 No drift report yet."
+        f"<br><small>Make at least {DRIFT_CHECK_EVERY} predictions to generate a live report.</small></h2>",
         404,
     )
 
