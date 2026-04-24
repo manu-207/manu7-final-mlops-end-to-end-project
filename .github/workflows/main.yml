@@ -1,4 +1,4 @@
-name: MLOps CI Pipeline with latest deployment
+name: MLOps CI Pipeline with my latest
 
 on:
   push:
