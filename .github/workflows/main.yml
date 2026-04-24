@@ -157,7 +157,7 @@ jobs:
         run: |
           aws ecs update-service \
             --cluster manu7-mlops-cluster \
-            --service manu7-mlops-service2 \
+            --service manu7-mlops-task-service2 \
             --force-new-deployment \
             --region ap-south-1
 
