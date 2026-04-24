@@ -47,8 +47,18 @@ def run_monitoring(data_path: str, model_path: str, report_dir: str = "reports")
 
     X_ref = X_ref.copy()
     X_cur = X_cur.copy()
-    X_ref["prediction"] = model.predict(X_ref)
-    X_cur["prediction"] = model.predict(X_cur)
+
+    # ── SIMULATE DRIFT: shift current data so Evidently detects real drift ────
+    # These shifts are large enough to trigger the KS test (p < 0.05).
+    # Remove this block once you have genuinely different production data.
+    X_cur["Glucose"]  = X_cur["Glucose"] * 1.35          # +35% glucose
+    X_cur["BMI"]      = X_cur["BMI"] + 6.0               # +6 BMI units
+    X_cur["Age"]      = X_cur["Age"] + 12                 # +12 years
+    X_cur["Insulin"]  = X_cur["Insulin"] * 1.5            # +50% insulin
+    print("[Evidently] ⚠️  Simulated drift injected into current data for testing")
+
+    X_ref["prediction"] = model.predict(X_ref[FEATURES])
+    X_cur["prediction"] = model.predict(X_cur[FEATURES])
 
     # ── Build Evidently Report (0.7.x API) ────────────────────────────────────
     # NOTE: report.run() returns a Snapshot object in evidently >= 0.6
